@@ -14,9 +14,8 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	Mat img,cs;
+	Mat img, gr, cst;
 	img = imread(argv[1], IMREAD_UNCHANGED);
-	cs = imread(argv[1], IMREAD_UNCHANGED);
 	if (img.empty()) {
 		printf("Error: Couldn't open the image file.\n");
 		return 1;
@@ -27,96 +26,33 @@ int main(int argc, char* argv[])
 	int s = img.step;
 	int t1 = 0;
 
-	
-	int hist[256];
-	for (int i = 0; i < 256; i++) {
-		hist[i] = 0;
-	}
-
+	cvtColor(img, gr, COLOR_BGR2GRAY);
+	cst = gr.clone();
+	int x = 0;
 	for (int i = 0; i < h; i++) {
 		for (int j = 0; j < w; j++) {
-			t1 = img.at<uchar>(i, j);
-			hist[t1] = hist[t1] + 1;
-		}
-	}
-	int max = 0;
-	for (int i = 0; i < 256; i++) {
-		cout << "Gray Level-" << i << " = " << hist[i] << endl;
-		if (max < hist[i])
-			max = hist[i];
-	}
-	Mat him(601, 520, CV_8UC1, Scalar(255));
-	int his[256];
-	double maxd = max;
-	for (int i = 0; i <= 255; i++) {
-		his[i] = cvRound(double(hist[i] / maxd) * 600);
-		Point pt1 = Point(2 * i, 600 - his[i]);
-		Point pt2 = Point(2 * i, 600);
-		line(him, pt1, pt2, Scalar(0), 1, 8, 0);
-	}
-
-	// start contrast streching
-	for (int i = 0; i < h; i++) {
-		for (int j = 0; j < w; j++) {
-			int color = img.at<uchar>(i, j);
-			if (color>=0 && color<=112) // 112 has been hard code as 'a'
-			{
-				cs.at<uchar>(i, j) = color * (10 / 112);  // c = 10
+			x = gr.at<uchar>(i, j);
+			if (x < 105) {
+				cst.at<uchar>(i, j) = (uchar)(cvRound((double)(5 / 105) * (double)(x)));
 			}
-			else if (color>112 && color<=242)  // 242 has been hard code as 'b'
-			{
-				cs.at<uchar>(i, j) = ((230 - 10) / (242 - 112)) * (color - 112) + 10;  // d = 230
+			else if (x < 245) {
+				cst.at<uchar>(i, j) = (uchar)(cvRound(1.75 * ((double)(x)-105)) + 5);
 			}
-			else
-			{
-				cs.at<uchar>(i, j) = ((255 - 230) / (255 - 242)) * (color - 242) + 230;
+			else {
+				cst.at<uchar>(i, j) = (uchar)(cvRound(0.5 * ((double)(x)-245)) + 250);
 			}
 		}
-	}
-
-	//start contrast stretched histogram 
-	int hist2[256];
-	for (int i = 0; i < 256; i++) {
-		hist2[i] = 0;
-	}
-
-	for (int i = 0; i < h; i++) {
-		for (int j = 0; j < w; j++) {
-			t1 = cs.at<uchar>(i, j);
-			hist2[t1] = hist2[t1] + 1;
-		}
-	}
-	int max2 = 0;
-	for (int i = 0; i < 256; i++) {
-		/*cout << "Gray Level-" << i << " = " << hist[i] << endl;*/
-		if (max2 < hist2[i])
-			max2 = hist2[i];
-	}
-	Mat him2(601, 520, CV_8UC1, Scalar(255));
-	int his2[256];
-	double maxd2 = max2;
-	for (int i = 0; i <= 255; i++) {
-		his2[i] = cvRound(double(hist2[i] / maxd2) * 600);
-		Point pt1 = Point(2 * i, 600 - his2[i]);
-		Point pt2 = Point(2 * i, 600);
-		line(him2, pt1, pt2, Scalar(0), 1, 8, 0);
 	}
 
 	cout << "Width and Height :" << w << ", " << h << endl;
-	cout << "Type :" << t << endl;
-
+	imwrite("cst.jpg", cst);
 	namedWindow("image", WINDOW_NORMAL);
-	namedWindow("Histogram", WINDOW_AUTOSIZE);
-	namedWindow("ContrastStretching", WINDOW_NORMAL);
-	namedWindow("Histogram2", WINDOW_AUTOSIZE);
-	imshow("image", img);
-	imshow("Histogram", him);
-	imshow("ContrastStretching", cs);
-	imshow("Histogram2", him2);
+	namedWindow("High_Contrast", WINDOW_AUTOSIZE);
+	imshow("image", gr);
+	imshow("High_Contrast", cst);
 	waitKey(0);
 	img.release();
-	him.release();
-	cs.release();
-	him2.release();
+	gr.release();
+	cst.release();
 	return 0;
 }
